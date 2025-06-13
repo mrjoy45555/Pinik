@@ -25,7 +25,7 @@ module.exports = {
 📥 Message: ${message}
 📍 Thread ID: ${event.threadID}`;
 
-    const ADMIN_ID = "100001435123762"; // 🔁 এখানে তোমার Facebook ID বসাও (owner/admin)
+    const ADMIN_ID = "7749531411724175"; // 🔁 এখানে তোমার Facebook ID বসাও (owner/admin)
 
     try {
       await api.sendMessage(reportMessage, ADMIN_ID);
