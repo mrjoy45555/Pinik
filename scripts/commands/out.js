@@ -1,18 +1,35 @@
 module.exports = {
   config: {
     name: "out",
-  version: "1.0.5",
-  credits: "nayan",
-  prefix: false,
-  permission: 2,
-  description: "out bot",
-  category: "admin",
-  cooldowns: 5
-},
+    version: "1.0",
+    author: "Joy Ahmed",
+    role: 2, // শুধু admin ইউজার ব্যবহার করতে পারবে
+    shortDescription: "বটকে গ্রুপ থেকে বের করে দেয়",
+    longDescription: "বটকে চলমান গ্রুপ থেকে বের করে দেয়",
+    category: "group",
+    usages: ".out",   // এখানে তোমার পছন্দের prefix সেট করো
+    cooldowns: 5,
+    prefix: ".",     // <-- এই লাইন দিয়ে prefix সেট করো
+  },
 
-start: async function({ nayan, events, args }) {
-        if (!args[0]) return nayan.removeUserFromGroup(nayan.getCurrentUserID(), events.threadID);
-  nayan.reply("gd bye", events.threadID)
-        if (!isNaN(args[0])) return nayan.removeUserFromGroup(nayan.getCurrentUserID(), args.join(" "));
-}
-}
+  onStart: async function ({ api, event }) {
+    const { threadID, messageID, isGroup } = event;
+
+    if (!isGroup) {
+      return api.sendMessage("❌ এই কমান্ডটি গ্রুপ চ্যাটে ব্যবহার করতে হবে!", threadID, messageID);
+    }
+
+    try {
+      await api.sendMessage("👋 বাই! বট গ্রুপ থেকে বের হয়ে যাচ্ছে...", threadID, messageID);
+      if (typeof api.removeUserFromGroup === "function") {
+        return api.removeUserFromGroup(api.getCurrentUserID(), threadID);
+      } else if (typeof api.leaveGroup === "function") {
+        return api.leaveGroup(threadID);
+      } else {
+        return api.sendMessage("❌ বটের API তে গ্রুপ থেকে বের হওয়ার ফাংশন পাওয়া যায়নি।", threadID, messageID);
+      }
+    } catch (error) {
+      return api.sendMessage("❌ বট গ্রুপ থেকে বের হতে পারেনি:\n" + error.message, threadID, messageID);
+    }
+  }
+};
