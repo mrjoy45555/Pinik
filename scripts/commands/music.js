@@ -1,19 +1,23 @@
-const fs = require('fs');
-const path = require('path');
-const yts = require('yt-search');
-const ytdl = require('@distube/ytdl-core');
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+const ytSearch = require("yt-search");
 
-module.exports.config = {
-  name: "music",
-  version: "1.0.0",
-  hasPermssion: 0,
-  credits: "Joy",
-  description: "Get music",
-  category: "media",
-  prefix: true,
-  usages: "[music name]",
-  cooldowns: 10
-};
+module.exports = {
+  config: {
+    name: "music",
+    version: "1.0.3",
+    hasPermssion: 0,
+    credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
+    description: "Download YouTube song from keyword search and link",
+    commandCategory: "Media",
+    usages: "[songName] [type]",
+    cooldowns: 5,
+    dependencies: {
+      "node-fetch": "",
+      "yt-search": "",
+    },
+  },
 
   run: async function ({ api, event, args }) {
     let songName, type;
