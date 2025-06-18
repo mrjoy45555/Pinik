@@ -3,9 +3,9 @@ const axios = require("axios");
 module.exports.config = {
   name: "bom",
   version: "1.3",
-  hasPermssion: 0,
+  hasPermssion: 2,
   credits: "Mostakim",
-  prefix: false,
+  prefix: true,
   description: "bom attack from 2 JSON sources",
   usages: "[count]",
   category: "tools",
