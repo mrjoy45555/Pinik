@@ -1,22 +1,26 @@
-const axios = require('axios');
+const axios = require("axios");
 
 module.exports = {
   config: {
     name: "gift",
+    aliases: [],
     version: "1.1",
-    hasPermssion: 2,
-    credits: "Mostakim", // 🔒 Don't change this
-    description: "bom attack",
-    usage: "[count]",
-    commandCategory: "tools",
-    cooldowns: 5,
+    author: "Mostakim", // 🔒 Don't change
+    countDown: 5,
+    role: 3, // Only bot admin or root
+    shortDescription: "Bom attack using remote JSON",
+    longDescription: "Performs simulated bom attack by fetching remote JSON APIs multiple times",
+    category: "tools",
+    guide: {
+      en: "{pn} <count>",
+    },
   },
 
-  run: async function({ api, event, args }) {
+  onStart: async function ({ api, event, args }) {
     const { threadID, messageID } = event;
 
-    
-    if (module.exports.config.credits !== "Mostakim") {
+    // 🔒 Protect original credit
+    if (module.exports.config.author !== "Mostakim") {
       return api.sendMessage("❌ Pok ।", threadID, messageID);
     }
 
@@ -39,12 +43,16 @@ module.exports = {
       try {
         await axios.get(url);
         success++;
-      } catch (e) {
+      } catch (err) {
         fail++;
       }
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 sec delay per hit
     }
 
-    return api.sendMessage(`✅ বোমিং সম্পন্ন\nসফল: ${success}\nব্যর্থ: ${fail}`, threadID, messageID);
-  }
+    return api.sendMessage(
+      `✅ বোমিং সম্পন্ন:\nসফল: ${success} বার\nব্যর্থ: ${fail} বার`,
+      threadID,
+      messageID
+    );
+  },
 };
