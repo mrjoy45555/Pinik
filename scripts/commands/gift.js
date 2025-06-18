@@ -2,7 +2,7 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "gift",
-  version: "1.3",
+  version: "1.4",
   hasPermssion: 2,
   credits: "Mostakim",
   prefix: false,
@@ -31,18 +31,17 @@ module.exports.run = async function ({ api, event, args }) {
     const message1 = res1.data.message || "💣 বোম ১ ফাটলো!";
     const message2 = res2.data.message || "🔥 বোম ২ ফাটলো!";
 
-    const amount = parseInt(args[0]) || 5;
-    const limit = amount > 50 ? 50 : amount;
+    
+    const userInput = parseInt(args[0]) || 5;
+    const count = userInput > 50 ? 50 : userInput;
 
-    api.sendMessage(`💥 শুরু হচ্ছে ${limit} বার বোম হামলা...`, threadID);
+    api.sendMessage(`💥 শুরু হচ্ছে ${count} বার বোম হামলা...`, threadID);
 
-    for (let i = 0; i < limit; i++) {
+    for (let i = 0; i < count; i++) {
       setTimeout(() => {
-        api.sendMessage(message1, threadID);
-        setTimeout(() => {
-          api.sendMessage(message2, threadID);
-        }, 1500);
-      }, i * 3000); // প্রতি ৩ সেকেন্ড পর পর একসেট পাঠাবে
+        const random = Math.random() < 0.5 ? message1 : message2;
+        api.sendMessage(random, threadID);
+      }, i * 2000); 
     }
 
   } catch (error) {
