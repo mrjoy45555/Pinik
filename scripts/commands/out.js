@@ -1,35 +1,41 @@
 module.exports = {
   config: {
     name: "out",
-    version: "1.0",
-    author: "Joy Ahmed",
-    role: 2, // শুধু admin ইউজার ব্যবহার করতে পারবে
-    shortDescription: "বটকে গ্রুপ থেকে বের করে দেয়",
-    longDescription: "বটকে চলমান গ্রুপ থেকে বের করে দেয়",
-    category: "group",
-    usages: ".out",   // এখানে তোমার পছন্দের prefix সেট করো
-    cooldowns: 5,
-    prefix: ".",     // <-- এই লাইন দিয়ে prefix সেট করো
+    version: "1.0.0",
+    credits: "Joy Ahmed",
+    description: "Remove bot from group",
+    category: "admin",
+    permission: 2, // Only bot admins or group admins
+    cooldowns: 3
   },
 
-  onStart: async function ({ api, event }) {
-    const { threadID, messageID, isGroup } = event;
+  onStart: async function ({ message, event, api }) {
+    const threadID = event.threadID;
 
-    if (!isGroup) {
-      return api.sendMessage("❌ এই কমান্ডটি গ্রুপ চ্যাটে ব্যবহার করতে হবে!", threadID, messageID);
-    }
-
+    // Optional: Check if user is group admin (only for group)
     try {
-      await api.sendMessage("👋 বাই! বট গ্রুপ থেকে বের হয়ে যাচ্ছে...", threadID, messageID);
-      if (typeof api.removeUserFromGroup === "function") {
-        return api.removeUserFromGroup(api.getCurrentUserID(), threadID);
-      } else if (typeof api.leaveGroup === "function") {
-        return api.leaveGroup(threadID);
-      } else {
-        return api.sendMessage("❌ বটের API তে গ্রুপ থেকে বের হওয়ার ফাংশন পাওয়া যায়নি।", threadID, messageID);
+      const threadInfo = await api.getThreadInfo(threadID);
+      const isGroup = threadInfo.isGroup;
+
+      if (!isGroup) {
+        return message.reply("❌ This command only works in group chats.");
       }
+
+      const senderID = event.senderID;
+      const admins = threadInfo.adminIDs.map(admin => admin.id);
+
+      if (!admins.includes(senderID)) {
+        return message.reply("🚫 Only group admins can use this command.");
+      }
+
+      await message.reply("👋 Leaving the group... Bye!");
+      setTimeout(() => {
+        api.removeUserFromGroup(api.getCurrentUserID(), threadID);
+      }, 2000);
+
     } catch (error) {
-      return api.sendMessage("❌ বট গ্রুপ থেকে বের হতে পারেনি:\n" + error.message, threadID, messageID);
+      console.error("Failed to leave group:", error);
+      message.reply("⚠️ Failed to leave the group. Try again later.");
     }
   }
 };
