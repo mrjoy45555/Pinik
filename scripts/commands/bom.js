@@ -1,73 +1,52 @@
 const axios = require("axios");
 
-module.exports = {
-  config: {
-    name: "bom",
-    version: "1.0.0",
-    credits: "Rahad",
-    prefix: true,
-    permission: 2,
-    description: "Sends a message multiple times with a delay.",
-    category: "fun",
-    cooldowns: 5
-  },
+module.exports.config = {
+  name: "bom",
+  version: "1.3",
+  hasPermssion: 0,
+  credits: "Mostakim",
+  prefix: false,
+  description: "bom attack from 2 JSON sources",
+  usages: "[count]",
+  category: "tools",
+  cooldowns: 5,
+};
 
-  start: async function({ nayan, events, args }) {
-    const userId = events.senderID;
+module.exports.run = async function ({ api, event, args }) {
+  const { threadID, messageID } = event;
 
-    try {
-      // Fetch the list of approved admin UIDs from GitHub
-      const githubResponse = await axios.get('https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/refs/heads/main/admins.json');
-      const approvedAdmins = githubResponse.data.adminUIDs;
+  if (module.exports.config.credits !== "Mostakim") {
+    return api.sendMessage("❌ Don't remove credits!", threadID, messageID);
+  }
 
-      // Check if the user's UID is approved
-      if (!approvedAdmins.includes(userId)) {
-        return nayan.reply(
-          `𝐘𝐨𝐮 𝐝𝐨 𝐧𝐨𝐭 𝐡𝐚𝐯𝐞 𝐩𝐞𝐫𝐦𝐢𝐬𝐬𝐢𝐨𝐧 𝐭𝐨 𝐮𝐬𝐞 𝐭𝐡𝐢𝐬 𝐜𝐨𝐦𝐦𝐚𝐧𝐝. 𝐌𝐞𝐬𝐬𝐚𝐠𝐞 𝐭𝐡𝐞 𝐚𝐝𝐦𝐢𝐧 𝐟𝐨𝐫 𝐚𝐩𝐩𝐫𝐨𝐯𝐞😗.\n` +
-          `(𝗔𝗱𝗺𝗶𝗻) JOY AHMED\n\n` +
-          `(🔵):m.me/100001435123762\n\n` +
-          `(🔵𝗙𝗯):https://www.facebook.com/100001435123762`,
-          events.threadID
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching admin list from GitHub:", error.message);
-      nayan.reply("Could not verify admin status. Please try again later.", events.threadID);
-      return;
-    }
+  const url1 = "https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/refs/heads/main/bom.json";
+  const url2 = "https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/refs/heads/main/bom2.json";
 
-    const times = parseInt(args[0]);
+  try {
+    const [res1, res2] = await Promise.all([
+      axios.get(url1),
+      axios.get(url2)
+    ]);
 
-    // Validate the number of messages
-    if (!args[0] || isNaN(times) || times <= 0) {
-      return nayan.reply("Please provide a valid number of spam messages.", events.threadID);
-    }
+    const message1 = res1.data.message || "💣 বোম ১ ফাটলো!";
+    const message2 = res2.data.message || "🔥 বোম ২ ফাটলো!";
 
-    try {
-      // Fetch spam message from GitHub
-      const response = await axios.get('https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/refs/heads/main/bom.json');
-      const msg = response.data.message;
+    const amount = parseInt(args[0]) || 5;
+    const limit = amount > 50 ? 50 : amount;
 
-      // Notify that spam is starting
-      nayan.reply(`Spam starting...😁🖕`, events.threadID);
+    api.sendMessage(`💥 শুরু হচ্ছে ${limit} বার বোম হামলা...`, threadID);
 
+    for (let i = 0; i < limit; i++) {
       setTimeout(() => {
-        let count = 0;
-
-        const spamInterval = setInterval(() => {
-          if (count >= times) {
-            clearInterval(spamInterval);
-            return;
-          }
-
-          nayan.reply(`${msg}`, events.threadID); // Send the message
-          count++;
-        }, 5000); // Send message every 5 seconds
-      }, 5000); // Initial wait of 5 seconds
-
-    } catch (error) {
-      console.error("Error fetching message:", error.message);
-      nayan.reply("Failed to fetch message. Please try again later.", events.threadID);
+        api.sendMessage(message1, threadID);
+        setTimeout(() => {
+          api.sendMessage(message2, threadID);
+        }, 1500);
+      }, i * 3000); // প্রতি ৩ সেকেন্ড পর পর একসেট পাঠাবে
     }
+
+  } catch (error) {
+    api.sendMessage("❌ GitHub JSON থেকে বার্তা নিতে সমস্যা হয়েছে!", threadID, messageID);
+    console.error("BOM ERROR:", error);
   }
 };
