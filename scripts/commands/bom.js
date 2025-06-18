@@ -5,7 +5,7 @@ module.exports = {
     name: "bom",
     version: "1.0.0",
     credits: "Rahad (converted for Botpack by Joy)",
-    prefix: false,
+    prefix: true,
     permission: 2,
     description: "Sends a message multiple times with a delay.",
     category: "fun",
