@@ -8,6 +8,7 @@ module.exports = {
     name: "music",
     version: "1.0.3",
     credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭 (converted by Joy for Botpack)",
+    prefix: "true"
     description: "Download YouTube song from keyword search and link",
     category: "media",
     cooldowns: 5,
