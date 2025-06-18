@@ -2,11 +2,11 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "gift",
-  version: "1.1",
+  version: "1.3",
   hasPermssion: 2,
   credits: "Mostakim",
   prefix: false,
-  description: "bom attack",
+  description: "bom attack from 2 JSON sources",
   usages: "[count]",
   category: "tools",
   cooldowns: 5,
@@ -15,35 +15,38 @@ module.exports.config = {
 module.exports.run = async function ({ api, event, args }) {
   const { threadID, messageID } = event;
 
-  
   if (module.exports.config.credits !== "Mostakim") {
-    return api.sendMessage("❌ POK U ।", threadID, messageID);
+    return api.sendMessage("❌ Don't remove credits!", threadID, messageID);
   }
 
-  let count = parseInt(args[0]);
-  if (isNaN(count) || count <= 0) {
-    return api.sendMessage("⚠️ সঠিকভাবে সংখ্যা দাও যেমন: bom 10", threadID, messageID);
-  }
+  const url1 = "https://raw.githubusercontent.com/Alifhosson/ALIF-BOT.json/refs/heads/main/bom.json";
+  const url2 = "https://raw.githubusercontent.com/Alifhosson/ALIF-BOT.json/refs/heads/main/bom2.json";
 
-  if (count > 50) count = 50;
+  try {
+    const [res1, res2] = await Promise.all([
+      axios.get(url1),
+      axios.get(url2)
+    ]);
 
-  const urls = [
-    "https://raw.githubusercontent.com/Alifhosson/ALIF-BOT.json/refs/heads/main/bom2.json",
-    "https://raw.githubusercontent.com/dipto-008/D1PT0/refs/heads/main/bom.json"
-  ];
+    const message1 = res1.data.message || "💣 বোম ১ ফাটলো!";
+    const message2 = res2.data.message || "🔥 বোম ২ ফাটলো!";
 
-  let success = 0, fail = 0;
+    const amount = parseInt(args[0]) || 5;
+    const limit = amount > 50 ? 50 : amount;
 
-  for (let i = 0; i < count; i++) {
-    const url = urls[Math.floor(Math.random() * urls.length)];
-    try {
-      await axios.get(url);
-      success++;
-    } catch (e) {
-      fail++;
+    api.sendMessage(`💥 শুরু হচ্ছে ${limit} বার বোম হামলা...`, threadID);
+
+    for (let i = 0; i < limit; i++) {
+      setTimeout(() => {
+        api.sendMessage(message1, threadID);
+        setTimeout(() => {
+          api.sendMessage(message2, threadID);
+        }, 1500);
+      }, i * 3000); // প্রতি ৩ সেকেন্ড পর পর একসেট পাঠাবে
     }
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
 
-  return api.sendMessage(`✅ বোমিং সম্পন্ন\nসফল: ${success}\nব্যর্থ: ${fail}`, threadID, messageID);
+  } catch (error) {
+    api.sendMessage("❌ GitHub JSON থেকে বার্তা নিতে সমস্যা হয়েছে!", threadID, messageID);
+    console.error("BOM ERROR:", error);
+  }
 };
