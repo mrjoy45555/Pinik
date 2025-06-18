@@ -7,19 +7,15 @@ module.exports = {
   config: {
     name: "music",
     version: "1.0.3",
-    hasPermssion: 0,
-    credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
+    credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭 (converted by Joy for Botpack)",
     description: "Download YouTube song from keyword search and link",
-    commandCategory: "Media",
-    usages: "[songName] [type]",
+    category: "media",
     cooldowns: 5,
-    dependencies: {
-      "node-fetch": "",
-      "yt-search": "",
-    },
+    usages: "[song name] [audio/video]",
+    permissions: [0],
   },
 
-  run: async function ({ api, event, args }) {
+  onStart: async function ({ message, args, event, api }) {
     let songName, type;
 
     if (
@@ -33,12 +29,7 @@ module.exports = {
       type = "audio";
     }
 
-    const processingMessage = await api.sendMessage(
-      "✅ Processing your request. Please wait...",
-      event.threadID,
-      null,
-      event.messageID
-    );
+    const processingMessage = await message.reply("✅ Processing your request. Please wait...");
 
     try {
       const searchResults = await ytSearch(songName);
@@ -52,17 +43,15 @@ module.exports = {
       const apiKey = "priyansh-here";
       const apiUrl = `https://priyansh-ai.onrender.com/youtube?id=${videoId}&type=${type}&apikey=${apiKey}`;
 
-      api.setMessageReaction("⌛", event.messageID, () => {}, true);
-
       const downloadResponse = await axios.get(apiUrl);
       const downloadUrl = downloadResponse.data.downloadUrl;
 
       const safeTitle = topResult.title.replace(/[^a-zA-Z0-9 \-_]/g, "");
       const filename = `${safeTitle}.${type === "audio" ? "mp3" : "mp4"}`;
-      const downloadPath = path.join(__dirname, "cache", filename);
+      const filePath = path.join(__dirname, "cache", filename);
 
-      if (!fs.existsSync(path.dirname(downloadPath))) {
-        fs.mkdirSync(path.dirname(downloadPath), { recursive: true });
+      if (!fs.existsSync(path.dirname(filePath))) {
+        fs.mkdirSync(path.dirname(filePath), { recursive: true });
       }
 
       const response = await axios({
@@ -71,37 +60,26 @@ module.exports = {
         responseType: "stream",
       });
 
-      const fileStream = fs.createWriteStream(downloadPath);
-      response.data.pipe(fileStream);
+      const writer = fs.createWriteStream(filePath);
+      response.data.pipe(writer);
 
       await new Promise((resolve, reject) => {
-        fileStream.on("finish", resolve);
-        fileStream.on("error", reject);
+        writer.on("finish", resolve);
+        writer.on("error", reject);
       });
 
-      api.setMessageReaction("✅", event.messageID, () => {}, true);
+      await message.reply({
+        body: `🖤 Title: ${topResult.title}\nHere is your ${
+          type === "audio" ? "audio" : "video"
+        } 🎧:`,
+        attachment: fs.createReadStream(filePath),
+      });
 
-      await api.sendMessage(
-        {
-          attachment: fs.createReadStream(downloadPath),
-          body: `🖤 Title: ${topResult.title}\n\n Here is your ${
-            type === "audio" ? "audio" : "video"
-          } 🎧:`,
-        },
-        event.threadID,
-        () => {
-          fs.unlinkSync(downloadPath);
-          api.unsendMessage(processingMessage.messageID);
-        },
-        event.messageID
-      );
-    } catch (error) {
-      console.error(`Failed to download and send song: ${error.message}`);
-      api.sendMessage(
-        `Failed to download song: ${error.message}`,
-        event.threadID,
-        event.messageID
-      );
+      fs.unlinkSync(filePath);
+      api.unsendMessage(processingMessage.messageID);
+    } catch (err) {
+      console.log("Error:", err.message);
+      await message.reply(`❌ Failed to process your request:\n${err.message}`);
     }
   },
 };
