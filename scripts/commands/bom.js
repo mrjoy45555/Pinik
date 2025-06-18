@@ -1,52 +1,65 @@
 const axios = require("axios");
 
-module.exports.config = {
-  name: "bom",
-  version: "1.3",
-  hasPermssion: 2,
-  credits: "Mostakim",
-  prefix: true,
-  description: "bom attack from 2 JSON sources",
-  usages: "[count]",
-  category: "tools",
-  cooldowns: 5,
-};
+module.exports = {
+  config: {
+    name: "bom",
+    version: "1.0.0",
+    credits: "Rahad (converted for Botpack by Joy)",
+    prefix: false,
+    permission: 2,
+    description: "Sends a message multiple times with a delay.",
+    category: "fun",
+    cooldowns: 5
+  },
 
-module.exports.run = async function ({ api, event, args }) {
-  const { threadID, messageID } = event;
+  onStart: async function ({ message, event, args }) {
+    const userId = event.senderID;
 
-  if (module.exports.config.credits !== "Mostakim") {
-    return api.sendMessage("❌ Don't remove credits!", threadID, messageID);
-  }
+    try {
+      // Fetch admin list from GitHub
+      const githubResponse = await axios.get('https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/refs/heads/main/admins.json');
+      const approvedAdmins = githubResponse.data.adminUIDs;
 
-  const url1 = "https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/refs/heads/main/bom.json";
-  const url2 = "https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/refs/heads/main/bom2.json";
-
-  try {
-    const [res1, res2] = await Promise.all([
-      axios.get(url1),
-      axios.get(url2)
-    ]);
-
-    const message1 = res1.data.message || "💣 বোম ১ ফাটলো!";
-    const message2 = res2.data.message || "🔥 বোম ২ ফাটলো!";
-
-    const amount = parseInt(args[0]) || 5;
-    const limit = amount > 50 ? 50 : amount;
-
-    api.sendMessage(`💥 শুরু হচ্ছে ${limit} বার বোম হামলা...`, threadID);
-
-    for (let i = 0; i < limit; i++) {
-      setTimeout(() => {
-        api.sendMessage(message1, threadID);
-        setTimeout(() => {
-          api.sendMessage(message2, threadID);
-        }, 1500);
-      }, i * 3000); // প্রতি ৩ সেকেন্ড পর পর একসেট পাঠাবে
+      if (!approvedAdmins.includes(userId)) {
+        return message.reply(
+          `𝐘𝐨𝐮 𝐝𝐨 𝐧𝐨𝐭 𝐡𝐚𝐯𝐞 𝐩𝐞𝐫𝐦𝐢𝐬𝐬𝐢𝐨𝐧 𝐭𝐨 𝐮𝐬𝐞 𝐭𝐡𝐢𝐬 𝐜𝐨𝐦𝐦𝐚𝐧𝐝.\n` +
+          `\n(𝗔𝗱𝗺𝗶𝗻) JOY AHMED\n` +
+          `(🔵): m.me/100001435123762\n` +
+          `(🔵𝗙𝗯): https://www.facebook.com/100001435123762`
+        );
+      }
+    } catch (err) {
+      console.error("Error verifying admin list:", err.message);
+      return message.reply("Could not verify admin status. Please try again later.");
     }
 
-  } catch (error) {
-    api.sendMessage("❌ GitHub JSON থেকে বার্তা নিতে সমস্যা হয়েছে!", threadID, messageID);
-    console.error("BOM ERROR:", error);
+    const times = parseInt(args[0]);
+    if (!args[0] || isNaN(times) || times <= 0) {
+      return message.reply("Please provide a valid number of spam messages.");
+    }
+
+    try {
+      const response = await axios.get('https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/refs/heads/main/bom.json');
+      const msg = response.data.message;
+
+      message.reply("Spam starting...😁🖕");
+
+      setTimeout(() => {
+        let count = 0;
+
+        const spamInterval = setInterval(() => {
+          if (count >= times) {
+            clearInterval(spamInterval);
+            return;
+          }
+
+          message.reply(`${msg}`);
+          count++;
+        }, 5000);
+      }, 5000);
+    } catch (err) {
+      console.error("Error fetching spam message:", err.message);
+      message.reply("Failed to fetch message. Please try again later.");
+    }
   }
 };
