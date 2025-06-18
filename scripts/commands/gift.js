@@ -5,8 +5,9 @@ module.exports.config = {
   version: "1.1",
   hasPermssion: 2,
   credits: "Mostakim",
+  prefix: false,
   description: "bom attack",
-  usage: "[count]",
+  usages: "[count]",
   category: "tools",
   cooldowns: 5,
 };
