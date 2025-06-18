@@ -7,7 +7,7 @@ module.exports.config = {
   credits: "Mostakim",
   description: "bom attack",
   usage: "[count]",
-  commandCategory: "tools",
+  category: "tools",
   cooldowns: 5,
 };
 
