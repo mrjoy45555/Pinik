@@ -3,6 +3,7 @@ module.exports = {
     name: "out",
     version: "1.0.0",
     credits: "Joy Ahmed",
+    prefix: "true",
     description: "Remove bot from group",
     category: "admin",
     permission: 2, // Only bot admins or group admins
