@@ -1,6 +1,18 @@
-const axios = require("axios");
+axios = require("axios");
 const fs = require("fs");
 const path = require("path");
+name: "help",
+  version: "1.0.0",
+  hasPermssion: 0,
+  credits: "Joy",
+  description: "Guide for new users",
+  category: "system",
+  usages: "/help",
+  prefix: true,
+  premium: false,
+  cooldowns: 5
+};
+
 
 module.exports.run = async function ({ api, event, args }) {
   const uid = event.senderID;
