@@ -45,7 +45,6 @@ const config = {
     role: 0,
     hasPermssion: 0,
     description: "",
-    usePrefix: true,
     prfix: true,
     category: "media",
     commandCategory: "media",
