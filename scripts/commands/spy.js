@@ -11,7 +11,7 @@ module.exports = {
     name: "spy",
     version: "1.0",
     hasPermission: 0,
-    usePrefix: true,
+    Prefix: true,
     credits: "Dipto",
     description: "Get user information and profile photo",
     category: "information",
