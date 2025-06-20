@@ -136,8 +136,6 @@ module.exports.run = async function ({ api, event, args }) {
 
   const imgurUrl = "https://i.imgur.com/TiD05Au.jpeg"; // <-- Replace this
 
-  const filePath = path.join(__dirname, "cache", "help_image.jpg");
-
   try {
     const response = await axios.get(imgurUrl, { responseType: "arraybuffer" });
     fs.writeFileSync(filePath, Buffer.from(response.data, "binary"));
