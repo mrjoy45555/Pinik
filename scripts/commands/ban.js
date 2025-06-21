@@ -1,10 +1,10 @@
 module.exports.config = {
   name: "ban",
-  version: "1.0.1",
+  version: "1.0.2",
   permission: 2,
   credits: "Joy",
-  prefix: true,
-  description: "Ban a user and auto-reply when they message in group.",
+  prefix: "true",
+  description: "Ban a user and prevent them from using commands or sending messages.",
   category: "moderation",
   usages: "[reply/userID]",
   cooldowns: 3
@@ -26,14 +26,31 @@ module.exports.run = async function({ api, event, args }) {
   }
 
   global.banList.push(uid);
+
+  // Optional: Reply directly to user's message if reply used
+  if (event.type === "message_reply") {
+    api.sendMessage("🚫 You have been banned from using this bot.", event.threadID, event.messageReply.messageID);
+  }
+
   return api.sendMessage(`✅ User ${uid} has been banned.`, event.threadID, event.messageID);
 };
 
-// Auto reply when banned user sends message
+// Block all messages from banned users (auto-reply)
 module.exports.handleEvent = async function({ api, event }) {
   global.banList = global.banList || [];
 
   if (global.banList.includes(event.senderID)) {
     return api.sendMessage("⛔ You are banned from interacting in this group.", event.threadID, event.messageID);
   }
+};
+
+// Block all command execution for banned users
+module.exports.beforeRun = async function({ event }) {
+  global.banList = global.banList || [];
+
+  if (global.banList.includes(event.senderID)) {
+    return false; // Prevent any command from running
+  }
+
+  return true; // Allow others
 };
