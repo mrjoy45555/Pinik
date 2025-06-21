@@ -1,7 +1,7 @@
 module.exports.config = {
   name: "sendnoti",
   version: "1.2",
-  permission: 2, // Only bot admin (bot admin permission)
+  permission: 2, // Custom handled via botAdminIDs
   credits: "Joy",
   description: "Sends a message/photo/video/sticker/file to all groups (bot admin only).",
   prefix: true,
@@ -13,23 +13,22 @@ module.exports.config = {
 module.exports.run = async function({ api, event, args }) {
   const { threadID, messageID, senderID, messageReply } = event;
 
-  // Check permission: only bot admin can use
-  const botInfo = await api.getCurrentUserID();
-  const botAdminIDs = [botInfo]; // or you can get full admin list if you have multiple admins
+  // ✅ Only allow these specific UIDs as bot admins
+  const botAdminIDs = [
+    "100001435123762", // Replace with actual admin UID
+    "100001435123762"  // Add more if needed
+  ];
 
-  // Here assuming permission:2 means bot admin; you can check senderID == bot admin ID
-  if (senderID !== botInfo) {
-    return api.sendMessage("❌ এই কমান্ডটি শুধুমাত্র বট অ্যাডমিনদের জন্য!", threadID, messageID);
+  if (!botAdminIDs.includes(senderID)) {
+    return api.sendMessage("❌ এই কমান্ডটি শুধুমাত্র নির্ধারিত বট অ্যাডমিনদের জন্য!", threadID, messageID);
   }
 
-  // Prepare notification content
   let notifMessage = "";
   let attachments = [];
 
-  // If reply message exists, copy text + attachments from it
   if (messageReply) {
     notifMessage = messageReply.body || "";
-    if (messageReply.attachments && messageReply.attachments.length > 0) {
+    if (messageReply.attachments?.length > 0) {
       attachments = messageReply.attachments.map(att => att.url);
     }
   } else {
@@ -39,7 +38,6 @@ module.exports.run = async function({ api, event, args }) {
     }
   }
 
-  // Fetch all threads (groups)
   let threadList = [];
   try {
     threadList = await api.getThreadList(100, null, ["INBOX"]);
@@ -50,24 +48,16 @@ module.exports.run = async function({ api, event, args }) {
   let sentCount = 0;
   let notSentCount = 0;
 
-  // Inform starting
   const sendMsg = await api.sendMessage("⏳ বিজ্ঞপ্তি পাঠানো শুরু হয়েছে...", threadID, messageID);
 
-  // Function to send message with or without attachments
   async function sendToThread(thread) {
     try {
-      // If no attachments, just send text
       if (attachments.length === 0) {
         await api.sendMessage(
           `📢 বিজ্ঞপ্তি\n━━━━━━━━━━━━━━\n${notifMessage}`,
           thread.threadID
         );
       } else {
-        // For media attachments, send as attachment(s) with caption text
-        // Facebook API may limit sending multiple attachments in one message,
-        // so send first attachment with caption, then send others without caption.
-
-        // Send first attachment with caption
         await api.sendMessage(
           {
             body: `📢 বিজ্ঞপ্তি\n━━━━━━━━━━━━━━\n${notifMessage}`,
@@ -76,7 +66,6 @@ module.exports.run = async function({ api, event, args }) {
           thread.threadID
         );
 
-        // Send remaining attachments (if any)
         for (let i = 1; i < attachments.length; i++) {
           await api.sendMessage(
             await api.getStream(attachments[i]),
@@ -91,19 +80,15 @@ module.exports.run = async function({ api, event, args }) {
     }
   }
 
-  // Loop through group threads (exclude current thread to avoid spam)
   for (const thread of threadList) {
-    if (sentCount >= 20) break; // limit to 20 groups per run
-
+    if (sentCount >= 20) break;
     if (thread.isGroup && thread.threadID !== threadID) {
       await sendToThread(thread);
     }
   }
 
-  // Summary
   let summary = `✅ বিজ্ঞপ্তি সফলভাবে পাঠানো হয়েছে ${sentCount} গ্রুপে।`;
   if (notSentCount > 0) summary += `\n❌ ${notSentCount} গ্রুপে পাঠানো যায়নি।`;
 
-  // Edit the "sending" message to summary
   await api.editMessage(summary, sendMsg.messageID, threadID);
 };
