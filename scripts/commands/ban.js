@@ -2,23 +2,24 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "ban",
-  version: "1.0.6",
+  version: "1.0.7",
   permission: 2,
-  credits: "Joy",
+  credits: "Joy (Combined Ban/Unban)",
   prefix: true,
-  description: "Ban a user and prevent them from using commands or sending messages. Whitelist loaded from GitHub.",
+  description: "Ban or unban a user. Prevents banned users from sending messages or using commands. Whitelist supported via GitHub.",
   category: "moderation",
-  usages: "[reply/userID]",
+  usages: "[ban/unban] [reply/userID]",
   cooldowns: 3
 };
 
-// Global
+// Global state
 global.banList = global.banList || [];
 global.banMessageIndex = global.banMessageIndex || {};
 
+// Whitelist GitHub URL
 const WHITELIST_URL = "https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/main/admins.json";
 
-// ❗ Custom ban reply messages
+// Custom messages (clean version)
 const messages = [
   "খাংকির পোলা তর মারে চুদি 🥰",
 "খাংকির পোলা তর কচি বোন রে চুদি ",
@@ -35,7 +36,7 @@ const messages = [
 " হাই মাদারচোদ তর তর ব্যাশা জাতের আম্মু টা রে আদর করে করে চুদি "
 ];
 
-// ✅ Load whitelist from remote
+// Load whitelist
 async function fetchAllowList() {
   try {
     const res = await axios.get(WHITELIST_URL);
@@ -46,35 +47,47 @@ async function fetchAllowList() {
   }
 }
 
+// Run Command
 module.exports.run = async function({ api, event, args }) {
-  const uid = event.type === "message_reply"
-    ? event.messageReply.senderID
-    : args[0];
+  const subCommand = args[0]?.toLowerCase();
+  const uid = event.type === "message_reply" ? event.messageReply.senderID : args[1];
+
+  if (!["ban", "unban"].includes(subCommand)) {
+    return api.sendMessage("❓ Use `/ban ban [uid/reply]` or `/ban unban [uid/reply]`", event.threadID, event.messageID);
+  }
 
   if (!uid || isNaN(uid)) {
-    return api.sendMessage("❌ Reply to a message or provide a valid user ID.", event.threadID, event.messageID);
+    return api.sendMessage("❌ Provide a valid user ID or reply to a message.", event.threadID, event.messageID);
   }
 
   const allowList = await fetchAllowList();
-
   if (allowList.includes(uid)) {
-    return api.sendMessage("❎ This user is whitelisted and cannot be banned.", event.threadID, event.messageID);
+    return api.sendMessage("🚫 This user is whitelisted and cannot be modified.", event.threadID, event.messageID);
   }
 
-  if (global.banList.includes(uid)) {
-    return api.sendMessage("⚠️ This user is already banned.", event.threadID, event.messageID);
+  if (subCommand === "ban") {
+    if (global.banList.includes(uid)) {
+      return api.sendMessage("⚠️ This user is already banned.", event.threadID, event.messageID);
+    }
+    global.banList.push(uid);
+    global.banMessageIndex[uid] = 0;
+    api.sendMessage("✅ User has been banned.", event.threadID, event.messageID);
+    if (event.type === "message_reply") {
+      api.sendMessage("🚫 You are banned from using the bot.", event.threadID, event.messageReply.messageID);
+    }
   }
 
-  global.banList.push(uid);
-  global.banMessageIndex[uid] = 0;
-
-  if (event.type === "message_reply") {
-    api.sendMessage("🚫 You have been banned from using this bot.", event.threadID, event.messageReply.messageID);
+  if (subCommand === "unban") {
+    if (!global.banList.includes(uid)) {
+      return api.sendMessage("ℹ️ This user is not banned.", event.threadID, event.messageID);
+    }
+    global.banList = global.banList.filter(id => id !== uid);
+    delete global.banMessageIndex[uid];
+    api.sendMessage("✅ User has been unbanned.", event.threadID, event.messageID);
   }
-
-  return api.sendMessage(`✅ User ${uid} has been banned.`, event.threadID, event.messageID);
 };
 
+// Handle message events (auto-reply to banned users)
 module.exports.handleEvent = async function({ api, event }) {
   const uid = event.senderID;
 
@@ -90,6 +103,7 @@ module.exports.handleEvent = async function({ api, event }) {
   return api.sendMessage(message, event.threadID, event.messageID);
 };
 
+// Prevent command execution by banned users
 module.exports.beforeRun = async function({ event }) {
   if (!global.banList.includes(event.senderID)) return true;
 
