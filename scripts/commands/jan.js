@@ -7,6 +7,7 @@ module.exports = {
     name: "bot",
     version: "1.0.0",
     author: "Joy Ahmed",
+    prefix: "false",
     countDown: 5,
     role: 0,
     description: {
