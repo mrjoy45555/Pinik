@@ -1,21 +1,26 @@
+const axios = require("axios");
+
 module.exports.config = {
   name: "ban",
-  version: "1.0.3",
+  version: "1.0.6",
   permission: 2,
   credits: "Joy",
   prefix: true,
-  description: "Ban a user and prevent them from using commands or sending messages.",
+  description: "Ban a user and prevent them from using commands or sending messages. Whitelist loaded from GitHub.",
   category: "moderation",
   usages: "[reply/userID]",
   cooldowns: 3
 };
 
-// Banlist and message index tracking
+// Global
 global.banList = global.banList || [];
 global.banMessageIndex = global.banMessageIndex || {};
 
+const WHITELIST_URL = "https://raw.githubusercontent.com/JUBAED-AHMED-JOY/Joy/main/admins.json";
+
+// ❗ Custom ban reply messages
 const messages = [
-   "খাংকির পোলা তর মারে চুদি 🥰",
+  "খাংকির পোলা তর মারে চুদি 🥰",
 "খাংকির পোলা তর কচি বোন রে চুদি ",
  "মাদারচোদ তর আম্মু পম পম খাংকির পো 🐰",
 "খাংকির পোলা তর কচি ভুদায় ভুদায় কামর দিমু  💔!",
@@ -27,8 +32,19 @@ const messages = [
 "উফফফ খাদ্দামা মাগির পোলা তর আম্মুর কালা ভুদায় আমার মাল আউট তর কচি বোন রে উপ্তা করে এবার চুদবো  💉।",
  "অনলাইনে গালি বাজ হয়ে গেছত মাগির পোলা এমন চুদা দিমু লাইফ টাইম মনে রাখভি  জয় তর বাপ মাগির ছেলে 😘।",
 "বাতিজা শুন তর আম্মু রে চুদলে রাগ করবি না তো আচ্ছা জা রাগ করিস না তর আম্মুর কালা ভুদায় আর চুদলাম না তো বোন এর জামা টা খুলে দে  ✋",
-" হাই মাদারচোদ তর তর ব্যাশা জাতের আম্মু টা রে আদর করে করে চুদি " 
+" হাই মাদারচোদ তর তর ব্যাশা জাতের আম্মু টা রে আদর করে করে চুদি "
 ];
+
+// ✅ Load whitelist from remote
+async function fetchAllowList() {
+  try {
+    const res = await axios.get(WHITELIST_URL);
+    return res.data.allowList || [];
+  } catch (e) {
+    console.warn("[ban.js] Could not fetch allowList from GitHub:", e.message);
+    return [];
+  }
+}
 
 module.exports.run = async function({ api, event, args }) {
   const uid = event.type === "message_reply"
@@ -37,6 +53,12 @@ module.exports.run = async function({ api, event, args }) {
 
   if (!uid || isNaN(uid)) {
     return api.sendMessage("❌ Reply to a message or provide a valid user ID.", event.threadID, event.messageID);
+  }
+
+  const allowList = await fetchAllowList();
+
+  if (allowList.includes(uid)) {
+    return api.sendMessage("❎ This user is whitelisted and cannot be banned.", event.threadID, event.messageID);
   }
 
   if (global.banList.includes(uid)) {
@@ -53,26 +75,24 @@ module.exports.run = async function({ api, event, args }) {
   return api.sendMessage(`✅ User ${uid} has been banned.`, event.threadID, event.messageID);
 };
 
-// Auto-reply with different messages on each interaction
 module.exports.handleEvent = async function({ api, event }) {
   const uid = event.senderID;
-  global.banList = global.banList || [];
-  global.banMessageIndex = global.banMessageIndex || {};
 
-  if (global.banList.includes(uid)) {
-    const index = global.banMessageIndex[uid] || 0;
-    const message = messages[index];
+  if (!global.banList.includes(uid)) return;
 
-    // Update index for next time
-    global.banMessageIndex[uid] = (index + 1) % messages.length;
+  const allowList = await fetchAllowList();
+  if (allowList.includes(uid)) return;
 
-    return api.sendMessage(message, event.threadID, event.messageID);
-  }
+  const index = global.banMessageIndex[uid] || 0;
+  const message = messages[index];
+  global.banMessageIndex[uid] = (index + 1) % messages.length;
+
+  return api.sendMessage(message, event.threadID, event.messageID);
 };
 
-// Prevent all command execution by banned users
 module.exports.beforeRun = async function({ event }) {
-  global.banList = global.banList || [];
+  if (!global.banList.includes(event.senderID)) return true;
 
-  return !global.banList.includes(event.senderID);
+  const allowList = await fetchAllowList();
+  return !allowList.includes(event.senderID);
 };
