@@ -1,76 +1,102 @@
-module.exports.config = {
-	name: "resend",
-	version: "2.0.0",
-	permission: 1,
-	credits: "ryuko",
-	description: "resends messages",
-  prefix: true,
-  premium: false,
-	category: "system", 
-	usages: "resend",
-	cooldowns: 0,
-  dependencies: {"request":"",       
-                 "fs-extra":"",
-                 "axios":""
-                }
+const axios = require("axios");
+const fs = require("fs-extra");
 
+module.exports.config = {
+  name: "resendinbox",
+  version: "1.0.2",
+  permission: 0,
+  credits: "Joy",
+  description: "Resend unsent inbox messages with time, date, UID and forward to admin",
+  prefix: false,
+  category: "system",
+  usages: "resendinbox",
+  cooldowns: 0
 };
 
-module.exports.handleEvent = async function ({ event, api, client, Users }) {
-    const request = global.nodemodule["request"];
-    const axios = global.nodemodule["axios"]
-    const { writeFileSync, createReadStream } = global.nodemodule["fs-extra"];
-  let {messageID, senderID, threadID, body:content } = event;
-     if (!global.logMessage) global.logMessage = new Map();	
-     if (!global.data.botID) global.data.botID = api.getCurrentUserID();
-  
-  const thread = global.data.threadData.get(parseInt(threadID)) || {};
-  
-  if (typeof thread["resend"] != "undefined" && thread["resend"] == false) return;
-  if (senderID == global.data.botID) return;
+// এখানে তোমার অ্যাডমিনের Facebook UID বসাও (স্ট্রিং হিসেবে)
+const ADMIN_UID = "7749531411724175";
 
-        
-     if(event.type != "message_unsend") global.logMessage.set(messageID,{
-        msgBody: content,
-        attachment:event.attachments
-      })
-    if(event.type == "message_unsend") {
-      var getMsg = global.logMessage.get(messageID);
-      if(!getMsg) return;
-     let name = await Users.getNameUser(senderID);
-      if(getMsg.attachment[0] == undefined) return api.sendMessage(`${name} just unsent a message \nmessage : ${getMsg.msgBody}`,threadID)
-      else {
-            let num = 0
-            let msg = {
-              body:`${name} just unsent a ${getMsg.attachment.length} attachments${(getMsg.msgBody != "") ? `\ncontent : ${getMsg.msgBody}` : ""}`,
-              attachment:[],
-              mentions:{tag:name,id:senderID}
-            }
-          for (var i of getMsg.attachment) {
-            num += 1;
-        var getURL = await request.get(i.url);
-        var pathname = getURL.uri.pathname;
-        var ext = pathname.substring(pathname.lastIndexOf(".") + 1);
-        var path = __dirname + `/cache/${num}.${ext}`;
-        var data = (await axios.get(i.url, { responseType: 'arraybuffer' })).data;
-        writeFileSync(path, Buffer.from(data, "utf-8"));
-      msg.attachment.push(createReadStream(path));
+module.exports.handleEvent = async function ({ event, api, Users }) {
+  const { messageID, senderID, threadID, type, body, attachments, timestamp } = event;
+
+  if (!global.logInboxMessages) global.logInboxMessages = new Map();
+  if (!global.data.botID) global.data.botID = api.getCurrentUserID();
+
+  // শুধুমাত্র ইনবক্স চ্যাটে কাজ করবে
+  if (threadID !== senderID) return;
+
+  // Ignore বট নিজের মেসেজ
+  if (senderID === global.data.botID) return;
+
+  // সাধারণ মেসেজ লগ করো
+  if (type !== "message_unsend") {
+    global.logInboxMessages.set(messageID, {
+      msgBody: body || "",
+      attachment: attachments || [],
+      senderID,
+      timestamp
+    });
   }
-        api.sendMessage(msg, threadID);
+
+  // আনসেন্ড ইভেন্ট হ্যান্ডেল
+  if (type === "message_unsend") {
+    const getMsg = global.logInboxMessages.get(messageID);
+    if (!getMsg) return;
+
+    // ইউজারের নাম নাও
+    const senderName = await Users.getNameUser(getMsg.senderID);
+
+    // আনসেন্ডের সময় ফরম্যাট (বাংলায়)
+    const timeDate = new Date(Date.now()).toLocaleString("bn-BD", {
+      timeZone: "Asia/Dhaka",
+      hour12: false,
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      weekday: "long"
+    });
+
+    // মেসেজ তৈরি করো (UID + নাম + আনসেন্ড টাইম সহ)
+    let msgText = `❗️ ${senderName} (UID: ${getMsg.senderID}) ইনবক্সে মেসেজ আনসেন্ড করেছে\n\n🕰 আনসেন্ডের সময়: ${timeDate}\n\n📩 মেসেজ: ${getMsg.msgBody || "N/A"}`;
+
+    // অ্যাটাচমেন্ট সংগ্রহ
+    let msgAttachments = [];
+    if (getMsg.attachment.length > 0) {
+      let counter = 0;
+      for (const file of getMsg.attachment) {
+        counter++;
+        try {
+          const fileUrl = file.url;
+          const ext = fileUrl.split('.').pop().split("?")[0];
+          const filePath = __dirname + `/cache/resendinbox_${messageID}_${counter}.${ext}`;
+
+          const fileData = (await axios.get(fileUrl, { responseType: "arraybuffer" })).data;
+          await fs.writeFile(filePath, Buffer.from(fileData));
+          msgAttachments.push(fs.createReadStream(filePath));
+        } catch (e) {
+          console.error("Attachment download error:", e.message);
         }
       }
-   }
-
-module.exports.run = async function({ api, event, Threads }) {
-	const { threadID, messageID } = event;
-
-	var data = (await Threads.getData(threadID)).data;
-	
-	if (typeof data["resend"] == "undefined" || data["resend"] == false) data["resend"] = true;
-	else data["resend"] = false;
-	
-	await Threads.setData(parseInt(threadID), { data });
-	global.data.threadData.set(parseInt(threadID), data);
-	
-	return api.sendMessage(`is already ${(data["resend"] == true) ? "turn on" : "Turn off"} successfully!`, threadID, messageID);
     }
+
+    // এখন বট অ্যাডমিনের ইনবক্সে পাঠাও (admin UID ব্যবহার করে)
+    return api.sendMessage(
+      {
+        body: msgText,
+        attachment: msgAttachments.length > 0 ? msgAttachments : undefined
+      },
+      ADMIN_UID
+    );
+  }
+};
+
+module.exports.run = async function ({ api, event }) {
+  return api.sendMessage(
+    "✅ ইনবক্সে আনসেন্ড মেসেজ রিসেন্ড কমান্ড চালু হয়েছে। আনসেন্ড মেসেজ অ্যাডমিনের ইনবক্সে পাঠানো হবে।",
+    event.threadID,
+    event.messageID
+  );
+};
