@@ -15,7 +15,7 @@ global.banList = global.banList || [];
 global.banMessageIndex = global.banMessageIndex || {};
 
 const messages = [
-  : "খাংকির পোলা তর মারে চুদি 🥰",
+   "খাংকির পোলা তর মারে চুদি 🥰",
 "খাংকির পোলা তর কচি বোন রে চুদি ",
  "মাদারচোদ তর আম্মু পম পম খাংকির পো 🐰",
 "খাংকির পোলা তর কচি ভুদায় ভুদায় কামর দিমু  💔!",
