@@ -1,18 +1,15 @@
 module.exports.config = {
-    name: "murgi",
-    version: "1.0.0",
-    hasPermssion: 2,
-    credits: "JOY",
-    prefix: "true",
-    description: "5 বারের জন্য ক্রমাগত বন্ধুর ট্যাগ ট্যাগ করুন\nসেই ব্যক্তিকে আত্মা কলিং বলা যেতে পারে",
-    commandCategory: "nsfw",
-    usages: " please @mention",
-    cooldowns: 10,
-    dependencies: {
-        "fs-extra": "",
-        "axios": ""
-    }
-}
+	name: "murgi",
+	version: "1.0.2",
+	permission: 2,
+	credits: "Joy",
+	prefix: true,
+	description: "",
+	category: "prefix",
+	usages: "[tag]",
+	cooldowns: 5
+
+};
 
 module.exports.run = async function({ api, args, Users, event}) {
     var mention = Object.keys(event.mentions)[0];
