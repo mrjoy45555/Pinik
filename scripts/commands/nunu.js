@@ -1,35 +1,42 @@
-const nunuSizes = [
-  "8D", "8=D", "8==D", "8===D", "8====D", "8=====D", "8======D",
-  "8=======D", "8========D", "8=========D", "8==========D",
-  "8===========D", "8============D", "8=============D",
-  "8==============D", "8===============D", "8================D"
-];
+module.exports = {
+  config: {
+    name: "nunu",
+    version: "1.0",
+    author: "JOY",
+    prefix: "true",
+    countDown: 5,
+    role: 0,
+    shortDescription: "Measure 🍆",
+    longDescription: "Shows how big your 🍆 is, or someone else's if tagged",
+    category: "fun",
+    guide: {
+      en: "{pn} [@mention]"
+    }
+  },
 
-module.exports.config = {
-  name: "nunu",
-  version: "1.0.0",
-  hasPermssion: 0,
-  credits: "JOY",
-  prefix: "true",
-  description: "Shows your nunu size 😂",
-  commandCategory: "fun",
-  usages: "[tag someone or yourself]",
-  cooldowns: 5,
-};
+  onStart: async function ({ message, event, usersData }) {
+    const nunuSizes = [
+      "8D", "8=D", "8==D", "8===D", "8====D", "8=====D", "8======D",
+      "8=======D", "8========D", "8=========D", "8==========D",
+      "8===========D", "8============D", "8=============D",
+      "8==============D", "8===============D", "8================D"
+    ];
 
-module.exports.run = async function ({ api, event, args }) {
-  const mention = Object.keys(event.mentions)[0];
-  const name = mention ? event.mentions[mention] : event.senderID;
-  const nunu = nunuSizes[Math.floor(Math.random() * nunuSizes.length)];
-  const tagName = mention ? Object.values(event.mentions)[0] : "Your";
+    const mention = Object.keys(event.mentions)[0];
+    const tagName = mention
+      ? event.mentions[mention]
+      : await usersData.getName(event.senderID);
 
-  const msg = `${tagName}'s 🍆 size:\n\n${nunu} cm 😂`;
+    const nunu = nunuSizes[Math.floor(Math.random() * nunuSizes.length)];
 
-  api.sendMessage({
-    body: msg,
-    mentions: mention ? [{
-      tag: tagName,
-      id: mention
-    }] : []
-  }, event.threadID, event.messageID);
+    const msg = `${tagName}'s 🍆 size:\n\n${nunu} cm 😂`;
+
+    message.reply({
+      body: msg,
+      mentions: mention ? [{
+        tag: tagName,
+        id: mention
+      }] : []
+    });
+  }
 };
