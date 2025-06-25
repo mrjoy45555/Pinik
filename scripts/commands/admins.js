@@ -1,9 +1,6 @@
 const fs = require("fs-extra");
 const path = require("path");
 
-const configPath = path.join(__dirname, "..", "..", "Joy.json");
-let config = require(configPath);
-
 module.exports = {
   name: "admins",
   version: "2.0.0",
@@ -19,17 +16,21 @@ module.exports = {
 };
 
 module.exports.run = async function ({ api, event, args, Users }) {
-  const { threadID, messageID, senderID, mentions, messageReply } = event;
+  const { threadID, messageID, mentions, messageReply } = event;
   const send = (msg) => api.sendMessage(msg, threadID, messageID);
   const subCmd = args[0];
+
+  // ✅ Move config and path inside the function
+  const configPath = path.join(__dirname, "..", "..", "Joy.json");
+  let config = fs.readJsonSync(configPath);
 
   const threadInfo = await api.getThreadInfo(threadID);
   const threadAdmins = threadInfo.adminIDs;
 
   if (!subCmd || subCmd === "list") {
     // Show both group admins & bot admins
-    let count = 1;
     let groupList = "";
+    let count = 1;
     for (const ad of threadAdmins) {
       const userInfo = await api.getUserInfo(ad.id);
       groupList += `${count++}. ${userInfo[ad.id].name} (${ad.id})\n`;
@@ -53,14 +54,12 @@ module.exports.run = async function ({ api, event, args, Users }) {
     );
   }
 
-  // Proceed with bot admin add/remove
   if (!["add", "-a", "remove", "-r", "listbot"].includes(subCmd)) {
     return send(
       "❌ Invalid sub-command.\n\nUse:\n• admins — Show all admins\n• admins listbot — Show bot admins only\n• admins add @tag/reply/uid — Add bot admin\n• admins remove @tag/reply/uid — Remove bot admin"
     );
   }
 
-  // Just list bot admins
   if (subCmd === "listbot") {
     if (config.adminBot.length === 0) return send("🤖 No bot admins set.");
     const botAdmins = await Promise.all(
@@ -72,7 +71,6 @@ module.exports.run = async function ({ api, event, args, Users }) {
     return send(`🤖 Bot Admins (${config.adminBot.length}):\n${botAdmins.join("\n")}`);
   }
 
-  // Add/Remove logic
   let uids = [];
 
   if (Object.keys(mentions).length > 0) {
@@ -110,7 +108,7 @@ module.exports.run = async function ({ api, event, args, Users }) {
     }
   }
 
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  fs.writeJsonSync(configPath, config, { spaces: 2 });
 
   const getNameList = async (arr) =>
     await Promise.all(
