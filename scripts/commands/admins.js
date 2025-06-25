@@ -7,7 +7,6 @@ module.exports = {
   permission: 0,
   credits: "Joy",
   prefix: true,
-  premium: false,
   description: "Show group/bot admins or add/remove bot admins",
   category: "prefix",
   usages: "admins [add/remove/listbot] [@tag/reply/uid]",
