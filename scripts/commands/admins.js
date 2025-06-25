@@ -1,14 +1,14 @@
 const fs = require("fs-extra");
 const path = require("path");
 
-const configPath = path.join(__dirname, "..", "..", "config.json");
+const configPath = path.join(__dirname, "..", "..", "Joy.json");
 let config = require(configPath);
 
 module.exports = {
   name: "admins",
   version: "2.0.0",
   permission: 0,
-  credits: "Ryuko + Modified by Joy",
+  credits: "Joy",
   prefix: true,
   premium: false,
   description: "Show group/bot admins or add/remove bot admins",
