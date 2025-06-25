@@ -4,7 +4,7 @@ const path = require("path");
 module.exports = {
   name: "admins",
   version: "2.0.0",
-  permission: 0,
+  permission: 2,
   credits: "Joy",
   prefix: true,
   description: "Show group/bot admins or add/remove bot admins",
