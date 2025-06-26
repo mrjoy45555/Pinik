@@ -12,6 +12,7 @@ module.exports = {
     credits: "dipto",
     countDown: 5,
     hasPermssion: 0,
+    premium: false,
     prefix: true,
     usePrefix: true,
     description: "Download audio from YouTube",
