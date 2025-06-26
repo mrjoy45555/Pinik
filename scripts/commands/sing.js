@@ -1,40 +1,35 @@
 const axios = require("axios");
-const fs = require('fs')
 const baseApiUrl = async () => {
   const base = await axios.get(
 `https://raw.githubusercontent.com/Blankid018/D1PT0/main/baseApiUrl.json`,
   );
   return base.data.api;
 };
-module.exports.config = {
+module.exports = {
+  config: {
     name: "sing",
-    version: "2.1.0",
-    aliases: [ "music", "play"],
+    version: "2.0.0",
     credits: "dipto",
     countDown: 5,
     hasPermssion: 0,
+    prefix: true,
+    usePrefix: true,
     description: "Download audio from YouTube",
     category: "media",
     commandCategory: "media",
-    usePrefix: true,
-    prefix: true,
-    usages: "{pn} [<song name>|<song link>]:"+ "\n   Example:"+"\n{pn} chipi chipi chapa chapa"
-  }
-  module.exports.run = async ({api,args, event,commandName, message }) =>{
+    usages: "[<song name>|<song link>]:"+ "\n   Example:"+"\n{pn} chipi chipi chapa chapa"
+  },
+  run: async ({api,args, event,commandName }) =>{
     const checkurl = /^(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))((\w|-){11})(?:\S+)?$/;
-    let videoID;
     const urlYtb = checkurl.test(args[0]);
-     
 if (urlYtb) {
-  const match = args[0].match(checkurl);
-  videoID = match ? match[1] : null;
         const { data: { title, downloadLink } } = await axios.get(
-          `${await baseApiUrl()}/ytDl3?link=${videoID}&format=mp3`
+          `${await baseApiUrl()}/ytDl2?link=${args[0]}&format=mp3`
         );
     return  api.sendMessage({
       body: title,
       attachment: await dipto(downloadLink,'audio.mp3')
-    },event.threadID,()=>fs.unlinkSync('audio.mp3'),event.messageID)
+    },event.threadID,event.messageID)
 }
     let keyWord = args.join(" ");
     keyWord = keyWord.includes("?feature=share") ? keyWord.replace("?feature=share", "") : keyWord;
@@ -51,7 +46,7 @@ if (urlYtb) {
     let i = 1;
     const thumbnails = [];
     for (const info of result) {
-thumbnails.push(diptoSt(info.thumbnail,'photo.jpg'));
+thumbnails.push(dipto(info.thumbnail,'photo.jpg'));
       msg += `${i++}. ${info.title}\nTime: ${info.time}\nChannel: ${info.channel.name}\n\n`;
     }
     api.sendMessage({
@@ -65,22 +60,20 @@ global.client.handleReply.push({
         result
       });
     },event.messageID);
-  }
- module.exports.handleReply = async ({ event, api, handleReply }) => {
+  },
+  handleReply: async ({ event, api, handleReply }) => {
     try {
     const { result } = handleReply;
     const choice = parseInt(event.body);
     if (!isNaN(choice) && choice <= result.length && choice > 0) {
       const infoChoice = result[choice - 1];
       const idvideo = infoChoice.id;
-  const { data: { title, downloadLink ,quality} } = await axios.get(`${await baseApiUrl()}/ytDl3?link=${idvideo}&format=mp3`);
+  const { data: { title, downloadLink } } = await axios.get(`${await baseApiUrl()}/ytDl2?link=https://m.youtube.com/watch?v=${idvideo}&format=mp3`);
     await api.unsendMessage(handleReply.messageID)
         await  api.sendMessage({
-          body: `• Title: ${title}\n• Quality: ${quality}`,
+          body: title,
           attachment: await dipto(downloadLink,'audio.mp3')
-        },event.threadID ,
-       ()=>fs.unlinkSync('audio.mp3')
-      ,event.messageID)
+        },event.threadID,event.messageID)
     } else {
       api.sendMessage("Invalid choice. Please enter a number between 1 and 6.",event.threadID,event.messageID);
     }
@@ -88,29 +81,19 @@ global.client.handleReply.push({
       console.log(error);
       api.sendMessage("⭕ Sorry, audio size was less than 26MB",event.threadID,event.messageID)
     }   
- };
+ }
+};
 async function dipto(url,pathName) {
-  try {
-    const response = (await axios.get(url,{
-      responseType: "arraybuffer"
-    })).data;
-
-    fs.writeFileSync(pathName, Buffer.from(response));
-    return fs.createReadStream(pathName);
-  }
-  catch (err) {
-    throw err;
-  }
-}
-async function diptoSt(url,pathName) {
   try {
     const response = await axios.get(url,{
       responseType: "stream"
     });
     response.data.path = pathName;
     return response.data;
-  }
-  catch (err) {
+  }catch (err) {
     throw err;
   }
+}
+async function getVideoInfo(url) {
+  //pore korbo😋.
 }
