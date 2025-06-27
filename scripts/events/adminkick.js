@@ -1,4 +1,4 @@
-module.exports = {
+module.exports.config = {
   config: {
     name: "adminKick",
     eventType: ["log:unsubscribe"],
